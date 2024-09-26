@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_1vqhf46" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.18.0" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.20.0">
+  <bpmn:process id="InventoryProcess" name="Inventory Process" isExecutable="true" camunda:historyTimeToLive="180">
+    <bpmn:startEvent id="StartEvent_1" name="Inventory check requested">
+      <bpmn:outgoing>Flow_1cbsyfq</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_1cbsyfq" sourceRef="StartEvent_1" targetRef="validateRequest" />
+    <bpmn:exclusiveGateway id="Gateway_0xp1ng9" name="Everything available?">
+      <bpmn:incoming>Flow_0hb580n</bpmn:incoming>
+      <bpmn:outgoing>Flow_1w3xrs6</bpmn:outgoing>
+      <bpmn:outgoing>Flow_1pgbj5d</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_0hb580n" sourceRef="CheckAvailability" targetRef="Gateway_0xp1ng9" />
+    <bpmn:sequenceFlow id="Flow_1w3xrs6" name="yes" sourceRef="Gateway_0xp1ng9" targetRef="Gateway_184n1ak">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${orderItemsNum == availableItemsNum}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:endEvent id="Event_1whk0ja" name="Inventory completed">
+      <bpmn:incoming>Flow_09ia7xm</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1pgbj5d" name="no" sourceRef="Gateway_0xp1ng9" targetRef="RemoveUnavailableItems">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${orderItemsNum &gt; availableItemsNum}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:exclusiveGateway id="Gateway_184n1ak">
+      <bpmn:incoming>Flow_1w3xrs6</bpmn:incoming>
+      <bpmn:incoming>Flow_1n6y268</bpmn:incoming>
+      <bpmn:outgoing>Flow_1hbx4lc</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_1hbx4lc" sourceRef="Gateway_184n1ak" targetRef="ReserveAvailableItems" />
+    <bpmn:sequenceFlow id="Flow_1n6y268" sourceRef="RemoveUnavailableItems" targetRef="Gateway_184n1ak" />
+    <bpmn:serviceTask id="CheckAvailability" name="Check availability" camunda:type="external" camunda:topic="availabilityCheck">
+      <bpmn:incoming>Flow_0ehl21y</bpmn:incoming>
+      <bpmn:outgoing>Flow_0hb580n</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="RemoveUnavailableItems" name="Remove unavailable items" camunda:type="external" camunda:topic="itemRemoval">
+      <bpmn:incoming>Flow_1pgbj5d</bpmn:incoming>
+      <bpmn:outgoing>Flow_1n6y268</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="ReserveAvailableItems" name="Reserve available items" camunda:type="external" camunda:topic="itemReservation">
+      <bpmn:incoming>Flow_1hbx4lc</bpmn:incoming>
+      <bpmn:outgoing>Flow_09ia7xm</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="validateRequest" name="Validate request">
+      <bpmn:incoming>Flow_1cbsyfq</bpmn:incoming>
+      <bpmn:outgoing>Flow_0tuoq3j</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:scriptTask id="ExecuteScript" name="Execute Script" camunda:asyncBefore="true" scriptFormat="groovy" camunda:resultVariable="sum">
+      <bpmn:incoming>Flow_0tuoq3j</bpmn:incoming>
+      <bpmn:outgoing>Flow_1mix0rv</bpmn:outgoing>
+      <bpmn:script>sum = 0
+execution.setVariable("sum", sum);</bpmn:script>
+    </bpmn:scriptTask>
+    <bpmn:sequenceFlow id="Flow_0tuoq3j" sourceRef="validateRequest" targetRef="ExecuteScript" />
+    <bpmn:sequenceFlow id="Flow_1mix0rv" sourceRef="ExecuteScript" targetRef="Activity_07hu9rd" />
+    <bpmn:sequenceFlow id="Flow_09ia7xm" sourceRef="ReserveAvailableItems" targetRef="Event_1whk0ja" />
+    <bpmn:sequenceFlow id="Flow_0ehl21y" sourceRef="Activity_07hu9rd" targetRef="CheckAvailability" />
+    <bpmn:serviceTask id="Activity_07hu9rd" name="Delegate task" camunda:class="com.camunda.training.MyCustomDelegate">
+      <bpmn:incoming>Flow_1mix0rv</bpmn:incoming>
+      <bpmn:outgoing>Flow_0ehl21y</bpmn:outgoing>
+    </bpmn:serviceTask>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="InventoryProcess">
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
+        <dc:Bounds x="132" y="159" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="112" y="202" width="78" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0asbljc_di" bpmnElement="validateRequest">
+        <dc:Bounds x="230" y="137" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1vmjavy_di" bpmnElement="ExecuteScript">
+        <dc:Bounds x="380" y="137" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_0xp1ng9_di" bpmnElement="Gateway_0xp1ng9" isMarkerVisible="true">
+        <dc:Bounds x="985" y="152" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="984" y="115" width="52" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_184n1ak_di" bpmnElement="Gateway_184n1ak" isMarkerVisible="true">
+        <dc:Bounds x="1195" y="152" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0vodm7k_di" bpmnElement="RemoveUnavailableItems">
+        <dc:Bounds x="1060" y="260" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1lc4hzz_di" bpmnElement="ReserveAvailableItems">
+        <dc:Bounds x="1280" y="137" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1fznbsu_di" bpmnElement="CheckAvailability">
+        <dc:Bounds x="800" y="137" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1whk0ja_di" bpmnElement="Event_1whk0ja">
+        <dc:Bounds x="1732" y="159" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1725" y="202" width="51" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0ra437j_di" bpmnElement="Activity_07hu9rd">
+        <dc:Bounds x="550" y="137" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1cbsyfq_di" bpmnElement="Flow_1cbsyfq">
+        <di:waypoint x="168" y="177" />
+        <di:waypoint x="230" y="177" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0hb580n_di" bpmnElement="Flow_0hb580n">
+        <di:waypoint x="900" y="177" />
+        <di:waypoint x="985" y="177" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1w3xrs6_di" bpmnElement="Flow_1w3xrs6">
+        <di:waypoint x="1035" y="177" />
+        <di:waypoint x="1195" y="177" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1098" y="159" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1pgbj5d_di" bpmnElement="Flow_1pgbj5d">
+        <di:waypoint x="1010" y="202" />
+        <di:waypoint x="1010" y="300" />
+        <di:waypoint x="1060" y="300" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1019" y="248" width="13" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1hbx4lc_di" bpmnElement="Flow_1hbx4lc">
+        <di:waypoint x="1245" y="177" />
+        <di:waypoint x="1280" y="177" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1n6y268_di" bpmnElement="Flow_1n6y268">
+        <di:waypoint x="1160" y="300" />
+        <di:waypoint x="1220" y="300" />
+        <di:waypoint x="1220" y="202" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0tuoq3j_di" bpmnElement="Flow_0tuoq3j">
+        <di:waypoint x="330" y="177" />
+        <di:waypoint x="380" y="177" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1mix0rv_di" bpmnElement="Flow_1mix0rv">
+        <di:waypoint x="480" y="177" />
+        <di:waypoint x="550" y="177" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_09ia7xm_di" bpmnElement="Flow_09ia7xm">
+        <di:waypoint x="1380" y="177" />
+        <di:waypoint x="1732" y="177" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0ehl21y_di" bpmnElement="Flow_0ehl21y">
+        <di:waypoint x="650" y="177" />
+        <di:waypoint x="800" y="177" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

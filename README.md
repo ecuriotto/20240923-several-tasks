@@ -1,3 +1,4 @@
-# Order-Process-App
+# Camunda 7 Test examples
 
-Template for the Camunda Platform 7 for Java Developers Training.
+Example of testing of different task types.
+It contains an embedded engine
